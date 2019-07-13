@@ -27,7 +27,6 @@ class Poet:
             # detokenize if nltk text passed in
             twd = TreebankWordDetokenizer()
             text = twd.detokenize(self.context)
-            # text = ' '.join(list(twd.detokenize(self.context)))
 
         self.tokens = [w.lower() for w in TOKENIZE_PATTERN.findall(text)]
         self.text = nltk.Text(self.tokens)
@@ -51,7 +50,8 @@ class Poet:
             except TypeError:
                 raise TypeError(METER_TYPE_ERROR)
             else:
-                assert all(i >= 4 for i in meter), 'All lines must have 4 or more syllables'
+                assert all(i >= 4 for i in meter), \
+                'All lines must have 4 or more syllables'
 
     def contextual_poet(self, stanza_data=None, meter=None, num_stanzas=1):
         """ Given some raw text, create a poem based on word contexts in the text.
@@ -75,7 +75,6 @@ class Poet:
             while len(self.poem) < lines_per_stanza:
                 line = self.line_generator(words_per_line=words_per_line)
                 self.poem.append(line)
-
         elif meter:
             for syllable_count in meter:
                 line = self.line_generator(syllables_per_line=syllable_count)
