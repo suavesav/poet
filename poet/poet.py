@@ -128,14 +128,13 @@ class Poet(object):
     def pick_starting_word(self):
         """ Get a random word from the text """
         if self.contextual:
-            loc = random.randint(0, len(self.tokens) - 1)
-            return self.tokens[loc]
+            return self.get_random_word(self.tokens)
     
     def pick_next_word(self):
         if self.contextual:
             concordances = self.text.concordance_list(self.last_seen_word)
-            loc = random.randint(0, len(concordances) - 1)
-            word = concordances[loc].right[0]
+            possible_next_words = [c.right[0] for c in concordances]
+            word = self.get_random_word(possible_next_words)
             return word
 
     def pick_next_word_by_syllables(self, max_syllables):
@@ -147,10 +146,12 @@ class Poet(object):
 
         word_syllable_count = sys.maxsize
         while word_syllable_count > max_syllables:
-            loc = random.randint(0, len(possible_next_words) - 1)
-            word = possible_next_words[loc]
+            word = self.get_random_word(possible_next_words)
             word_syllable_count = self.syllable_dict[word]
         return word
+
+    def get_random_word(self, word_list):
+        return random.sample(word_list, 1)[0]
 
     def print_poem(self):
         """ Prints the poem """
