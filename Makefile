@@ -11,3 +11,7 @@ clean:
 
 pti:
 	pipenv run ptipython --vi
+
+requirements.txt: clean
+	pipenv sync
+	pipenv run pip freeze > requirements.txt
