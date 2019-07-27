@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import nltk
 import re
 import random
@@ -5,9 +7,9 @@ import sys
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
-from utils import syllable_counter
+from .utils import syllable_counter
 
-class Poet:
+class Poet(object):
     def __init__(self, context):
         """
         context -- context to be parsed and used for context 
@@ -127,7 +129,7 @@ class Poet:
         for w in unseen_words:
             self.syllable_dict[w] = syllable_counter(w) 
 
-        word_syllable_count = sys.maxint
+        word_syllable_count = sys.maxsize
         while word_syllable_count > max_syllables:
             loc = random.randint(0, len(possible_next_words) - 1)
             word = possible_next_words[loc]
@@ -137,7 +139,7 @@ class Poet:
     def print_poem(self):
         """ Prints the poem """
         for line in self.poem:
-            print line
+            print(line)
 
 # eventually want to get get context from POS-tagger
 # eventually want to get punctuation from ngram too
