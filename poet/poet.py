@@ -5,19 +5,30 @@ import random
 import sys
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+from datamuse import datamuse
 
 from .utils import syllable_counter
 
 class Poet(object):
-    def __init__(self, context):
+    def __init__(self, context=None):
         """
         context -- context to be parsed and used for context 
                    (can be raw or nltk.Text)
         """
-        self.context = context
+        self.datamuse = datamuse.Datamuse()
         self.syllable_dict = {}
         self.last_seen_word = None
-        self._prepare_for_poet()
+        self.contextual = False
+
+        if context:
+            self.context = context
+            self.contextual=True
+            self._prepare_for_poet()
+        print("contextual mode") if self.contextual else print("free mode")
+
+    def toggle_contextual_mode(self):
+        self.contextual = not self.contextual
+        print("contextual mode") if self.contextual else print("free mode")
 
     def _prepare_for_poet(self):
         """ Tokenize, get rid of punctuation, lowercase-ify """
@@ -54,7 +65,7 @@ class Poet(object):
                 assert all(i >= 4 for i in meter), \
                 'All lines must have 4 or more syllables'
 
-    def contextual_poet(self, stanza_data=None, meter=None, num_stanzas=1):
+    def compose(self, stanza_data=None, meter=None, num_stanzas=1, force_contextual=False):
         """ Given some raw text, create a poem based on word contexts in the text.
         Arguments:
         stanza_data -- tuple of form (<lines_per_stanza>, <words_per_line>)
@@ -62,6 +73,10 @@ class Poet(object):
             e.g. [5,7,5] for a haiku
         num_stanzas -- the number of stanzas in the poem
         """
+        if force_contextual and self.context:
+            self.contextual = True
+            print("contextual mode\n\n")
+
         self._validate_input(stanza_data, meter)
         self.poem = []
         while num_stanzas:
@@ -112,14 +127,16 @@ class Poet(object):
 
     def pick_starting_word(self):
         """ Get a random word from the text """
-        loc = random.randint(0, len(self.tokens) - 1)
-        return self.tokens[loc]
+        if self.contextual:
+            loc = random.randint(0, len(self.tokens) - 1)
+            return self.tokens[loc]
     
     def pick_next_word(self):
-        concordances = self.text.concordance_list(self.last_seen_word)
-        loc = random.randint(0, len(concordances) - 1)
-        word = concordances[loc].right[0]
-        return word
+        if self.contextual:
+            concordances = self.text.concordance_list(self.last_seen_word)
+            loc = random.randint(0, len(concordances) - 1)
+            word = concordances[loc].right[0]
+            return word
 
     def pick_next_word_by_syllables(self, max_syllables):
         concordances = self.text.concordance_list(self.last_seen_word)
