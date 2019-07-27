@@ -6,6 +6,8 @@ verify_ssl = true
 [dev-packages]
 ptpython = "*"
 ipython = "*"
+tox = "*"
+tox-pyenv = "*"
 
 [packages]
 nltk = "==3.4"
