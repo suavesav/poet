@@ -25,3 +25,8 @@ def syllable_counter(word):
                 num_syllables += 1
 
     return num_syllables or 1
+
+def basic_words():
+    f = open('basic_words.txt')
+    words = f.readline().strip(',\n').split(',')
+    return words

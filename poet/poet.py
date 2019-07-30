@@ -5,9 +5,10 @@ import random
 import sys
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+# from nltk.corpus import words as worddict
 from datamuse import datamuse
 
-from .utils import syllable_counter
+from .utils import syllable_counter, basic_words
 
 class Poet(object):
     def __init__(self, context=None):
@@ -129,6 +130,8 @@ class Poet(object):
         """ Get a random word from the text """
         if self.contextual:
             return self.get_random_word(self.tokens)
+        else:
+            return self.get_random_word(basic_words())
     
     def pick_next_word(self):
         if self.contextual:
@@ -140,6 +143,8 @@ class Poet(object):
     def pick_next_word_by_syllables(self, max_syllables):
         concordances = self.text.concordance_list(self.last_seen_word)
         possible_next_words = [c.right[0] for c in concordances]
+
+        # only count syllables if the word has not been seen before
         unseen_words = set(possible_next_words) - set(self.syllable_dict.keys())
         for w in unseen_words:
             self.syllable_dict[w] = syllable_counter(w) 
