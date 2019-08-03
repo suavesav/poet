@@ -3,6 +3,7 @@ import nltk
 import re
 import random
 import sys
+import string
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 # from nltk.corpus import words as worddict
@@ -119,10 +120,10 @@ class Poet(object):
         elif syllables_per_line:
             num_syllables = 0
             while num_syllables < syllables_per_line:
-                self.last_seen_word = self.pick_next_word_by_syllables(
+                self.last_seen_word, word_syllables = self.pick_next_word_by_syllables(
                     syllables_per_line - num_syllables)
                 line.append(self.last_seen_word)
-                num_syllables += self.syllable_dict[self.last_seen_word]
+                num_syllables += word_syllables
 
         return ' '.join(line)
 
@@ -137,23 +138,37 @@ class Poet(object):
         if self.contextual:
             concordances = self.text.concordance_list(self.last_seen_word)
             possible_next_words = [c.right[0] for c in concordances]
-            word = self.get_random_word(possible_next_words)
-            return word
+        else:
+            r = self.datamuse.words(lc=self.last_seen_word, max=10)
+            possible_next_words = [w['word'] for w in r if w['word'] not in string.punctuation]
+
+        word = self.get_random_word(possible_next_words)
+        return word
 
     def pick_next_word_by_syllables(self, max_syllables):
-        concordances = self.text.concordance_list(self.last_seen_word)
-        possible_next_words = [c.right[0] for c in concordances]
+        if self.contextual:
+            concordances = self.text.concordance_list(self.last_seen_word)
+            next_words = [c.right[0] for c in concordances]
+            possible_next_words = {}
+            for w in next_words:
+                try:
+                    possible_next_words[w] = self.syllable_dict[w]
+                except KeyError:
+                    possible_next_words[w] = syllable_counter(w)
+            possible_next_words = {(k:v) for k,v in possible_next_words.items() if v <= max_syllables}
 
-        # only count syllables if the word has not been seen before
-        unseen_words = set(possible_next_words) - set(self.syllable_dict.keys())
-        for w in unseen_words:
-            self.syllable_dict[w] = syllable_counter(w) 
+            word = self.get_random_word(possible_next_words.keys())
+            return (word, self.syllable_dict[word])
+        else:
+            possible_next_words = {}
+            r = self.datamuse.words(lc=self.last_seen_word, md='s', max=20)
+            for row in r:
+                w = row['word']
+                if w not in string.punctuation and row['numSyllables'] <= max_syllables:
+                    possible_next_words[w] = row
 
-        word_syllable_count = sys.maxsize
-        while word_syllable_count > max_syllables:
-            word = self.get_random_word(possible_next_words)
-            word_syllable_count = self.syllable_dict[word]
-        return word
+            word = self.get_random_word(possible_next_words.keys())
+            return (word, possible_next_words[word]['numSyllables'])
 
     def get_random_word(self, word_list):
         return random.sample(word_list, 1)[0]
