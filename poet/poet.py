@@ -154,11 +154,13 @@ class Poet(object):
                 try:
                     possible_next_words[w] = self.syllable_dict[w]
                 except KeyError:
-                    possible_next_words[w] = syllable_counter(w)
-            possible_next_words = {(k:v) for k,v in possible_next_words.items() if v <= max_syllables}
+                    num_syllables = syllable_counter(w)
+                    possible_next_words[w] = num_syllables
+                    self.syllable_dict[w] = num_syllables
+            possible_next_words = {k:v for k,v in possible_next_words.items() if v <= max_syllables}
 
             word = self.get_random_word(possible_next_words.keys())
-            return (word, self.syllable_dict[word])
+            return (word, possible_next_words[word])
         else:
             possible_next_words = {}
             r = self.datamuse.words(lc=self.last_seen_word, md='s', max=20)
