@@ -35,15 +35,27 @@ class Poet(object):
     def _prepare_for_poet(self):
         """ Tokenize, get rid of punctuation, lowercase-ify """
         TOKENIZE_PATTERN = re.compile(r"[a-zA-Z]+-?'?[a-zA-Z]*")
+        tagged_tokens = None
 
         text = self.context
         if isinstance(self.context, nltk.Text):
             # detokenize if nltk text passed in
+            tagged_tokens = nltk.pos_tag(self.context)
             twd = TreebankWordDetokenizer()
             text = twd.detokenize(self.context)
 
         self.tokens = [w.lower() for w in TOKENIZE_PATTERN.findall(text)]
         self.text = nltk.Text(self.tokens)
+        if not tagged_tokens:
+            tagged_tokens = nltk.pos_tag(self.tokens)
+
+        self.tagdict = {}
+        for tt in tagged_tokens:
+            v,k = tt
+            try:
+                self.tagdict[k].add(v.lower())
+            except KeyError:
+                self.tagdict[k] = set([v.lower()])
 
     def _validate_input(self, stanza_data, meter):
         STANZA_DATA_TYPE_ERROR = 'stanza_data should be an iterator containing lines_per_stanza, words_per_line'
@@ -184,3 +196,4 @@ class Poet(object):
 # eventually want to get punctuation from ngram too
 # eventually want to get capitalization from original text
 # cadence, line length, rhyme scheme
+# adj noun alliteration
