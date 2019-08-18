@@ -6,7 +6,6 @@ import sys
 import string
 
 from nltk.tokenize.treebank import TreebankWordDetokenizer
-# from nltk.corpus import words as worddict
 from datamuse import datamuse
 
 from .utils import syllable_counter, basic_words
@@ -115,6 +114,9 @@ class Poet(object):
 
         self._validate_input(stanza_data, meter)
         self.poem = []
+        self.ss = None
+        self.ss_loc = None
+
         while num_stanzas:
             self.stanza_generator(stanza_data, meter)
             self.poem.append('')
@@ -164,20 +166,28 @@ class Poet(object):
     def pick_starting_word(self):
         """ Get a random word from the text """
         if self.contextual:
-            # return self.get_random_word(self.word_tokens)
-            return self.get_random_word(self.tokens)
+            pos = self.get_current_pos()
+            possible_words = self.posdict[pos]
+            return self.get_random(possible_words)
         else:
-            return self.get_random_word(basic_words())
+            return self.get_random(basic_words())
     
     def pick_next_word(self):
         if self.contextual:
+            pos = self.get_current_pos()
+            if pos in string.punctuation:
+                return pos
+            pos_words = self.posdict[pos]
             concordances = self.text.concordance_list(self.last_seen_word)
-            possible_next_words = [c.right[0] for c in concordances]
+            concordance_words = [c.right[0] for c in concordances]
+            possible_next_words = set(pos_words).intersection(concordance_words)
+            if len(possible_next_words) == 0:
+                possible_next_words = concordance_words
         else:
             r = self.datamuse.words(lc=self.last_seen_word, max=10)
             possible_next_words = [w['word'] for w in r if w['word'] not in string.punctuation]
 
-        word = self.get_random_word(possible_next_words)
+        word = self.get_random(possible_next_words)
         return word
 
     def pick_next_word_by_syllables(self, max_syllables):
@@ -194,7 +204,7 @@ class Poet(object):
                     self.syllable_dict[w] = num_syllables
             possible_next_words = {k:v for k,v in possible_next_words.items() if v <= max_syllables}
 
-            word = self.get_random_word(possible_next_words.keys())
+            word = self.get_random(possible_next_words.keys())
             return (word, possible_next_words[word])
         else:
             possible_next_words = {}
@@ -204,11 +214,20 @@ class Poet(object):
                 if w not in string.punctuation and row['numSyllables'] <= max_syllables:
                     possible_next_words[w] = row
 
-            word = self.get_random_word(possible_next_words.keys())
+            word = self.get_random(possible_next_words.keys())
             return (word, possible_next_words[word]['numSyllables'])
 
-    def get_random_word(self, word_list):
-        return random.sample(word_list, 1)[0]
+    def get_random(self, objs):
+        return random.sample(objs, 1)[0]
+
+    def get_current_pos(self):
+        if self.ss is None or (self.ss_loc == len(self.ss) - 1):
+            self.ss = self.get_random(self.basic_sentence_structures)
+            self.ss_loc = 0
+        else:
+            self.ss_loc += 1
+        pos = self.ss[self.ss_loc]
+        return pos
 
     def print_poem(self):
         """ Prints the poem """
