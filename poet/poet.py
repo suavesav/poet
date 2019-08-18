@@ -70,7 +70,7 @@ class Poet(object):
                     self.posdict[pos] = set([word])
 
             self.sentence_structures.append(sentence_structure)
-            if len(sentence_structure) <= 10:
+            if len(sentence_structure) <= 15:
                 self.basic_sentence_structures.append(sentence_structure)
 
             sent = sent.lower()
@@ -145,13 +145,17 @@ class Poet(object):
         if self.last_seen_word is None:
             self.last_seen_word = self.pick_starting_word()
             line = [self.last_seen_word]
+            words_in_line = [self.last_seen_word]
         else:
             line = []
+            words_in_line = []
 
         if words_per_line:
-            while len(line) < words_per_line:
+            while len(words_in_line) < words_per_line:
                 self.last_seen_word = self.pick_next_word()
                 line.append(self.last_seen_word)
+                if self.last_seen_word not in string.punctuation:
+                    words_in_line.append(self.last_seen_word)
 
         elif syllables_per_line:
             num_syllables = 0
