@@ -33,29 +33,51 @@ class Poet(object):
         print("contextual mode") if self.contextual else print("free mode")
 
     def _prepare_for_poet(self):
-        """ Tokenize, get rid of punctuation, lowercase-ify """
-        TOKENIZE_PATTERN = re.compile(r"[a-zA-Z]+-?'?[a-zA-Z]*")
-        tagged_tokens = None
+        """
+            Tokenize, get rid of punctuation, derive sentence structures
+            from the text, and save basic ones separately. Also create POS
+            dict for the text.
+        """
+        BASIC_TOKENIZE_PATTERN = re.compile(r"[a-zA-Z]+-?'?[a-zA-Z]*")
+
+        self.tokens = []
+        self.word_tokens = []
+        self.tagged_tokens = []
+        self.sentence_structures = []
+        self.basic_sentence_structures = []
+        self.posdict = {}
 
         text = self.context
         if isinstance(self.context, nltk.Text):
             # detokenize if nltk text passed in
-            tagged_tokens = nltk.pos_tag(self.context)
             twd = TreebankWordDetokenizer()
             text = twd.detokenize(self.context)
 
-        self.tokens = [w.lower() for w in TOKENIZE_PATTERN.findall(text)]
-        self.text = nltk.Text(self.tokens)
-        if not tagged_tokens:
-            tagged_tokens = nltk.pos_tag(self.tokens)
+        sents = nltk.sent_tokenize(text)
+        for sent in sents:
+            sentence_structure = []
 
-        self.tagdict = {}
-        for tt in tagged_tokens:
-            v,k = tt
-            try:
-                self.tagdict[k].add(v.lower())
-            except KeyError:
-                self.tagdict[k] = set([v.lower()])
+            sent_tokens = nltk.word_tokenize(sent)
+            self.tokens += sent_tokens
+
+            tagged_sent_tokens = nltk.pos_tag(sent_tokens)
+            self.tagged_tokens += tagged_sent_tokens
+
+            for word, pos in tagged_sent_tokens:
+                sentence_structure.append(pos)
+                try:
+                    self.posdict[pos].add(word)
+                except KeyError:
+                    self.posdict[pos] = set([word])
+
+            self.sentence_structures.append(sentence_structure)
+            if len(sentence_structure) <= 10:
+                self.basic_sentence_structures.append(sentence_structure)
+
+            sent = sent.lower()
+            self.word_tokens += [w for w in BASIC_TOKENIZE_PATTERN.findall(sent)]
+
+        self.text = nltk.Text(self.tokens)
 
     def _validate_input(self, stanza_data, meter):
         STANZA_DATA_TYPE_ERROR = 'stanza_data should be an iterator containing lines_per_stanza, words_per_line'
@@ -142,6 +164,7 @@ class Poet(object):
     def pick_starting_word(self):
         """ Get a random word from the text """
         if self.contextual:
+            # return self.get_random_word(self.word_tokens)
             return self.get_random_word(self.tokens)
         else:
             return self.get_random_word(basic_words())
