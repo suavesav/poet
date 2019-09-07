@@ -238,8 +238,5 @@ class Poet(object):
         for line in self.poem:
             print(line)
 
-# eventually want to get get context from POS-tagger
-# eventually want to get punctuation from ngram too
-# eventually want to get capitalization from original text
 # cadence, line length, rhyme scheme
 # adj noun alliteration
