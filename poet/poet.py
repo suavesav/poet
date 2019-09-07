@@ -85,7 +85,8 @@ class Poet(object):
             self.stanza_generator(stanza_data, meter)
             self.poem.append('')
             num_stanzas -= 1
-        self.print_poem()
+            self.print_poem()
+            self.poem = []
 
     def stanza_generator(self, stanza_data=None, meter=None):
         if stanza_data:
